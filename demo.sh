@@ -27,13 +27,23 @@ echo "Blocking port 80 (HTTP)"
 sudo python3 firewall.py add-port 80
 
 echo "Trying curl http://example.com (should fail)..."
-curl --max-time 5 http://example.com || echo "Curl failed as expected"
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://example.com) || true
+if [ "$HTTP_STATUS" != "200" ]; then
+  echo "Curl failed as expected (HTTP status: $HTTP_STATUS)"
+else
+  echo "Unexpected success (HTTP status: $HTTP_STATUS)"
+fi
 
 echo "Removing port 80 block"
 sudo python3 firewall.py remove-port 80
 
 echo "Trying curl http://example.com again (should succeed)..."
-curl --max-time 5 http://example.com
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://example.com) || true
+if [ "$HTTP_STATUS" = "200" ]; then
+  echo "Curl succeeded (HTTP status: $HTTP_STATUS)"
+else
+  echo "Curl failed (HTTP status: $HTTP_STATUS)"
+fi
 
 echo "Stopping firewall..."
 sudo kill $FW_PID
